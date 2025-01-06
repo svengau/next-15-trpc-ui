@@ -7,13 +7,28 @@ import {
 } from "@/server/api/trpc";
 import { posts } from "@/server/db/schema";
 
+const typeEnum = z.enum(["BLOG", "FAV"]);
+
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
-    .input(z.object({ text: z.string() }))
+    .input(
+      // z.object({ type: typeEnum, text: z.string() }),
+      z.discriminatedUnion("type", [
+        z.object({ type: typeEnum.extract(["BLOG"]), text: z.string() }),
+        z.object({ type: typeEnum.extract(["FAV"]), url: z.string() }),
+      ]),
+    )
     .query(({ input }) => {
-      return {
-        greeting: `Hello ${input.text}`,
-      };
+      if (input.type === "BLOG") {
+        return {
+          greeting: `Hello ${input.text}`,
+        };
+      } else if (input.type === "FAV") {
+        return {
+          greeting: `Hello url ${input.url}`,
+        };
+      }
+      return null;
     }),
 
   create: protectedProcedure
